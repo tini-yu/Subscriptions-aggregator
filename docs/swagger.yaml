@@ -1,0 +1,242 @@
+definitions:
+  models.Subscription:
+    properties:
+      end_date:
+        description: 'Опционально: дата окончания'
+        type: string
+      id:
+        description: Primary key
+        type: integer
+      price:
+        description: Стоимость в рублях
+        type: integer
+      service_name:
+        description: Название сервиса
+        type: string
+      start_date:
+        description: Дата начала
+        type: string
+      user_id:
+        description: UUID пользователя
+        type: string
+    type: object
+  models.SubscriptionInput:
+    properties:
+      end_date:
+        description: аналогично
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        description: временно строка до парсинга
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.UpdateSubscription:
+    properties:
+      end_date:
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        type: string
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервер аггрегации данных об онлайн подписках пользователей.
+  title: User Subscription Aggregator
+  version: "1.0"
+paths:
+  /subscriptions:
+    get:
+      description: Возвращает список всех подписок
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Subscription'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все подписки
+      tags:
+      - Subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новую подписку в базу данных
+      parameters:
+      - description: Данные подписки
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/models.SubscriptionInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать новую подписку
+      tags:
+      - Subscriptions
+  /subscriptions/{id}:
+    delete:
+      description: Удаляет подписку по ID
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Подписка удалена
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить подписку
+      tags:
+      - Subscriptions
+    get:
+      description: Возвращает одну подписку по её ID
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить подписку по ID
+      tags:
+      - Subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Обновляет поля подписки по ID (только переданные и непустые поля)
+      parameters:
+      - description: ID подписки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновлённые поля подписки
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateSubscription'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить подписку
+      tags:
+      - Subscriptions
+  /subscriptions/total-cost:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает суммарную стоимость подписок пользователя за указанный
+        период с фильтрацией по названию сервиса (счет по месяцам)
+      parameters:
+      - description: ID пользователя (UUID)
+        in: query
+        name: user_id
+        type: string
+      - description: Название сервиса (опционально)
+        in: query
+        name: service_name
+        type: string
+      - description: Дата начала периода (в формате MM-YYYY) (опционально)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: Дата окончания периода (в формате MM-YYYY) (опционально)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Суммарная стоимость, например {\"total_cost\": 900}'
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получение суммарной стоимости подписок
+      tags:
+      - Subscriptions
+swagger: "2.0"
